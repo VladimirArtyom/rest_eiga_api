@@ -9,17 +9,29 @@ import (
 )
 
 func (app* application) createMovieHandler(w http.ResponseWriter,r *http.Request){
-	fmt.Fprintln(w, "create movie")
+ // Wait a moment
+	var inputData struct {
+		Title string `json:"title"`
+		Year int32 `json:"year"`
+		Runtime int32 `json:"runtime"`
+		Genres []string `json:"genres"`
+	}
+
+	err := app.readJSON(w, r, inputData)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", inputData)
+	fmt.Println("Movies created successfully")
 }
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r*http.Request){
 
 	id, err := app.readIDParameter(r)
-	if err != nil {
-		
-		http.NotFound(w, r)
-		return
-	}
+	app.notFoundResponse(w, r)
 
 	var movieDummy = data.Movie {
 		ID: id,
@@ -33,11 +45,7 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r*http.Request){
 
 	err = app.writeJSON(w, payload{"movie": movieDummy}, nil, http.StatusOK)
 
-	if err != nil {
-		app.logger.Println(err)
-		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
-		return 
-	}
+	app.serverErrorResponse(w, r, err)
 
 	return
 }
