@@ -14,7 +14,6 @@ func (app *application) healthcheckHandler(w http.ResponseWriter,r *http.Request
 		},
 	}
 
-	
 	err := app.writeJSON(w, payload{"data": data}, nil, http.StatusOK) // Tu peux changer l'en-tete plus tard
 	app.serverErrorResponse(w, r, err)
 	
