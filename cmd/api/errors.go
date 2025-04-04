@@ -9,7 +9,6 @@ func (app *application) logError(r *http.Request, err error) {
 	app.logger.Println(err)
 }
 
-
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, err_message interface{}) {
 
 	payload_data := payload{"error": err_message}
@@ -22,7 +21,13 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 	}
 	return
 }
-// specific error response
+
+// specific error response for each code
+
+// FailedValidationResponse message is depend on
+func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	app.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
+}
 
 func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.logError(r, err)
@@ -32,11 +37,10 @@ func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Reque
 	return
 }
 
-func (app *application) badRequestErrorResponse(w http.ResponseWriter, r* http.Request, err error) {
+func (app *application) badRequestErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 
 	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
-
 
 func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("The %s method is not supported for this resource", r.Method)
@@ -51,6 +55,3 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request)
 	app.errorResponse(w, r, http.StatusNotFound, message)
 	return
 }
-
-
-
