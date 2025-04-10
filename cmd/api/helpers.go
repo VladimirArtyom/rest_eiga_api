@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -90,4 +91,13 @@ func (app *application) writeJSON(w http.ResponseWriter, payload payload,
 	w.Write(jsonData)
 	w.WriteHeader(statusCode)
 	return nil
+}
+
+func convertStrToInt(str string, logger *log.Logger) int {
+	result, err := strconv.Atoi(str)
+	if err != nil {
+		logger.Println(str)
+		logger.Fatal("Unable to convert str to int")
+	}
+	return result
 }
