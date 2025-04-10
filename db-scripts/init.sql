@@ -1,0 +1,3 @@
+CREATE USER greenlight WITH PASSWORD '123456';
+CREATE DATABASE greenlight;
+GRANT ALL PRIVILEGES on DATABASE greenlight TO greenlight;
