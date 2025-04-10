@@ -52,12 +52,35 @@ migrate-up:
 	migrate/migrate:v4.14.1 \
 	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
 
+# Please change the migration version
+migrate-goto:
+	docker run --rm \
+	--network eiga-go-network \
+	-v $(CURDIR)/migrations:/migrations \
+	migrate/migrate:v4.14.1 \
+	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" goto 2
+
+# Please change the migration version
+migrate-down:
+	docker run --rm \
+	--network eiga-go-network \
+	-v $(CURDIR)/migrations:/migrations \
+	migrate/migrate:v4.14.1 \
+	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" down 1
+
 migrate-create-movies-table_1:
 	docker run --rm \
 	--network eiga-go-network \
 	-v $(CURDIR)/migrations:/migrations \
 	migrate/migrate:v4.14.1 \
 	create -seq -ext=.sql -dir=/migrations create_movies_table
+
+migrate-create-movies-check-constraint_2:
+	docker run --rm \
+	--network eiga-go-network \
+	-v $(CURDIR)/migrations:/migrations \
+	migrate/migrate:v4.14.1 \
+	create -seq -ext=.sql -dir=/migrations add_movies_check_constraints
 
 init-db: create-network create-postgres 
 delete-db: stop-postgres remove-postgres delete-network
