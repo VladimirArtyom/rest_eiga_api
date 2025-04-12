@@ -1,9 +1,11 @@
 package data
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
+	"github.com/lib/pq"
 )
 
 type Movie struct {
@@ -15,6 +17,36 @@ type Movie struct {
 	Version int32    `json:"version"`
 
 	CreatedAt time.Time `json:"-"`
+}
+
+type MovieModel struct {
+	DB *sql.DB
+}
+
+func (m *MovieModel) Insert(movie *Movie) error {
+	query := `
+		INSERT INTO movies (title, year, runtime, genres) 
+		VALUES ($1, $2, $3, $4) 
+		RETURNING id, created_at, version
+	`
+
+	var args []interface{}
+	args = append(args, movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)) // Make sure that each datatype has been supported by the database to read.
+
+	// Save the returning variables to existing movie.
+	return m.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+}
+
+func (m *MovieModel) Get(id int64) (*Movie, error) {
+	return nil, nil
+}
+
+func (m *MovieModel) Update(movie *Movie) error {
+	return nil
+}
+
+func (m *MovieModel) Delete(movie *Movie) error {
+	return nil
 }
 
 func ValidateMovie(v *validator.Validator, movie *Movie) {

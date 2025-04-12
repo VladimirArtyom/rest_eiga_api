@@ -52,7 +52,7 @@ migrate-up:
 	migrate/migrate:v4.14.1 \
 	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
 
-# Please change the migration version
+# Please change the migration version, essayer à utiliser goto pour changing migrations version
 migrate-goto:
 	docker run --rm \
 	--network eiga-go-network \
@@ -66,7 +66,14 @@ migrate-down:
 	--network eiga-go-network \
 	-v $(CURDIR)/migrations:/migrations \
 	migrate/migrate:v4.14.1 \
-	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" down 1
+	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" down
+
+migrate-version:
+	docker run --rm \
+	--network eiga-go-network \
+	-v $(CURDIR)/migrations:/migrations \
+	migrate/migrate:v4.14.1 \
+	-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" version
 
 migrate-create-movies-table_1:
 	docker run --rm \

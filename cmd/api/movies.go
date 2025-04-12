@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
-	// Wait a moment
+	// Wait a moment, this
 	var inputData struct {
 		Title   string       `json:"title"`
 		Year    int32        `json:"year"`
@@ -39,7 +39,22 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fmt.Fprintf(w, "YEP %+v\n", movie)
+	err = app.models.Movies.Insert(movie)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Make a header ? Pourqoui ? Donc tu ne changes pas directment le w.Header
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", movie.ID))
+
+	err = app.writeJSON(w, payload{"movie": movie}, headers, http.StatusCreated)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 }
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {

@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
@@ -31,6 +32,7 @@ type config struct {
 type application struct {
 	cfg    config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
@@ -69,6 +71,7 @@ func main() {
 	var app *application = &application{
 		cfg:    cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	var router *httprouter.Router = app.routes()
