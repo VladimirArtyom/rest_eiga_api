@@ -138,15 +138,38 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// write the json
+	// Ecrire le fichier JSON
 	err = app.writeJSON(w, payload{"movies": movie}, nil, http.StatusOK)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-
 }
 
 func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request) {
-	return
+	id, err := app.readIDParameter(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Movies.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+			return
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+
+		return
+	}
+
+	err = app.writeJSON(w, payload{"message": "Movie is sucessfully deleted"}, nil, http.StatusOK)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 }
