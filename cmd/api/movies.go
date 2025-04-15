@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
 	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
@@ -60,20 +60,93 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := app.readIDParameter(r)
-	app.notFoundResponse(w, r)
-
-	var movieDummy = data.Movie{
-		ID:        id,
-		Title:     "Primitif",
-		Runtime:   120,
-		Genres:    []string{"Comedy", "Drama", "俺"},
-		Version:   1,
-		CreatedAt: time.Now(),
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
 	}
 
-	err = app.writeJSON(w, payload{"movie": movieDummy}, nil, http.StatusOK)
+	movie, err := app.models.Movies.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+			return
+		default:
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
 
-	app.serverErrorResponse(w, r, err)
+	err = app.writeJSON(w, payload{"movie": movie}, nil, http.StatusOK)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
+}
+
+func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParameter(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// get the movie, check it
+	movie, err := app.models.Movies.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+			return
+
+		default:
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	// faire un lecteur
+	var inputData struct {
+		Title   string       `json:"title"`
+		Year    int32        `json:"year"`
+		Runtime data.Runtime `json:"runtime"`
+		Genres  []string     `json:"genres"`
+	}
+
+	err = app.readJSON(w, r, &inputData)
+	if err != nil {
+		app.badRequestErrorResponse(w, r, err)
+	}
+
+	movie.Runtime = inputData.Runtime
+	movie.Genres = inputData.Genres
+	movie.Title = inputData.Title
+	movie.Year = inputData.Year
+
+	//validate
+	var v *validator.Validator = validator.New()
+
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Movies.Update(movie)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// write the json
+	err = app.writeJSON(w, payload{"movies": movie}, nil, http.StatusOK)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+}
+
+func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
