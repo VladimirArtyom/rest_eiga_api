@@ -8,7 +8,6 @@ DB_NAME = greenlight
 DB_USERNAME = greenlight
 DB_PASSWORD = 123456
 
-
 create-network:
 	docker network create eiga-go-network
 delete-network:
@@ -92,6 +91,9 @@ migrate-create-movies-check-constraint_2:
 init-db: create-network create-postgres 
 delete-db: stop-postgres remove-postgres delete-network
 populate-db: init-postgres 
+
+run_concurrency:
+	printf '%s\n' {1..8} | xargs -I % -P 8 curl -X PATCH -d '{"runtime":"78 mins"}' "http://localhost:8080/v1/movies/5" -printf '%s\n' {1..8} | xargs -I % -P 8 curl -X PATCH -d '{"runtime":"78 mins"}' "http://localhost:8080/v1/movies/5"
 
 run:
 	go run $(PATH_FILE)

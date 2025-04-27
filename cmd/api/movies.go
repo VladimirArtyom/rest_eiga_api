@@ -96,22 +96,20 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	movie, err := app.models.Movies.Get(id)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-			return
-
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
 		default:
 			app.serverErrorResponse(w, r, err)
-			return
 		}
+		return
 	}
 
 	// faire un lecteur
 	var inputData struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year"`
-		Runtime data.Runtime `json:"runtime"`
-		Genres  []string     `json:"genres"`
+		Title   *string       `json:"title"`
+		Year    *int32        `json:"year"`
+		Runtime *data.Runtime `json:"runtime"`
+		Genres  []string      `json:"genres"`
 	}
 
 	err = app.readJSON(w, r, &inputData)
@@ -119,11 +117,21 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		app.badRequestErrorResponse(w, r, err)
 	}
 
-	movie.Runtime = inputData.Runtime
-	movie.Genres = inputData.Genres
-	movie.Title = inputData.Title
-	movie.Year = inputData.Year
+	if inputData.Title != nil {
+		movie.Title = *inputData.Title
+	}
 
+	if inputData.Runtime != nil {
+		movie.Runtime = *inputData.Runtime
+	}
+
+	if inputData.Year != nil {
+		movie.Year = *inputData.Year
+	}
+
+	if inputData.Genres != nil {
+		movie.Genres = inputData.Genres
+	}
 	//validate
 	var v *validator.Validator = validator.New()
 
@@ -134,9 +142,15 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	err = app.models.Movies.Update(movie)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
+	fmt.Println("BERAPA KALI")
 
 	// Ecrire le fichier JSON
 	err = app.writeJSON(w, payload{"movies": movie}, nil, http.StatusOK)
