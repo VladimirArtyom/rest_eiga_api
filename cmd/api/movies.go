@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
 	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
@@ -102,6 +103,14 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 			app.serverErrorResponse(w, r, err)
 		}
 		return
+	}
+
+	// Verifie si la demande contient un en-tete X-Expected-version.
+	if r.Header.Get("X-Expected-Version") != "" {
+		if strconv.FormatInt(int64(movie.Version), 32) != r.Header.Get("X-Expected-Version") {
+			app.editConflictResponse(w, r)
+			return
+		}
 	}
 
 	// faire un lecteur

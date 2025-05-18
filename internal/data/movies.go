@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -31,23 +32,54 @@ func (m *MovieModel) Insert(movie *Movie) error {
 		RETURNING id, created_at, version
 	`
 
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+
 	var args []interface{}
 	args = append(args, movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)) // Make sure that each datatype has been supported by the database to read.
 
 	// Save the returning variables to existing movie.
-	return m.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
 func (m *MovieModel) Get(id int64) (*Movie, error) {
+
+	/*
+		In case tu peux utiliser ça
+		query := `
+			SELECT pg_sleep(10), id, created_at, title, year, runtime, genres, version
+			FROM movies
+			WHERE id = $1
+		`
+		var movie Movie = Movie{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+		// La méthode cancel est appelée avant le retour de la fonction.
+		defer cancel()
+
+		err := m.DB.QueryRowContext(ctx, query, id).Scan(
+			&[]byte{},
+			&movie.ID, &movie.CreatedAt,
+			&movie.Title, &movie.Year, &movie.Runtime,
+			pq.Array(&movie.Genres), &movie.Version)
+	*/
 	query := `
 		SELECT id, created_at, title, year, runtime, genres, version
-		FROM movies
-		WHERE id = $1
+		from movies
+		WHERE id=$1
 	`
 	var movie Movie = Movie{}
-	err := m.DB.QueryRow(query, id).Scan(&movie.ID, &movie.CreatedAt,
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&movie.ID, &movie.CreatedAt,
 		&movie.Title, &movie.Year, &movie.Runtime,
-		pq.Array(&movie.Genres), &movie.Version)
+		pq.Array(&movie.Genres), &movie.Version,
+	)
 
 	if err != nil {
 		switch {
@@ -68,6 +100,10 @@ func (m *MovieModel) Update(movie *Movie) error {
 		WHERE id = $5 AND version = $6
 		RETURNING version
 	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	args := []interface{}{
 		movie.Title,
 		movie.Year,
@@ -77,7 +113,7 @@ func (m *MovieModel) Update(movie *Movie) error {
 		movie.Version,
 	}
 
-	err := m.DB.QueryRow(query, args...).Scan(
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
 		&movie.Version,
 	)
 	if err != nil {
@@ -99,7 +135,10 @@ func (m *MovieModel) Delete(id int64) error {
 		DELETE FROM movies
 		WHERE id = $1
 	`
-	sqlResult, err := m.DB.Exec(query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	sqlResult, err := m.DB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return ErrRecordNotFound
