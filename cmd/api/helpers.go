@@ -7,9 +7,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -100,4 +102,38 @@ func convertStrToInt(str string, logger *log.Logger) int {
 		logger.Fatal("Unable to convert str to int")
 	}
 	return result
+}
+
+// lire les parameters de Request header.
+func (app *application) readCsv(parameters url.Values, key string, defaultValue []string) []string {
+	strCsv := parameters.Get(key)
+
+	if strCsv == "" {
+		return defaultValue
+	}
+	return strings.Split(strCsv, ",")
+}
+
+func (app *application) readInt(parameters url.Values, key string, defaultValue int, v *validator.Validator) int {
+	value := parameters.Get(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	valueInt, err := strconv.Atoi(value)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+		return defaultValue
+	}
+
+	return valueInt
+}
+
+func (app *application) readString(parameters url.Values, key string, defaultValues string) string {
+	value := parameters.Get(key)
+	if value == "" {
+		return defaultValues
+	}
+	// Add the necessary validations
+	return value
 }

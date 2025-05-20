@@ -88,6 +88,13 @@ migrate-create-movies-check-constraint_2:
 	migrate/migrate:v4.14.1 \
 	create -seq -ext=.sql -dir=/migrations add_movies_check_constraints
 
+migrate-add-movies-indexes_3:
+	docker run --rm \
+	--network eiga-go-network \
+	-v $(CURDIR)/migrations:/migrations \
+	migrate/migrate:v4.14.1 \
+	create -seq -ext=.sql -dir=/migrations add_movies_indexes
+
 init-db: create-network create-postgres 
 delete-db: stop-postgres remove-postgres delete-network
 populate-db: init-postgres 

@@ -43,6 +43,57 @@ func (m *MovieModel) Insert(movie *Movie) error {
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
+func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
+
+	query := `
+		SELECT id, created_at, title, year, runtime, genres, version
+		FROM movies
+		WHERE (to_tsvector(title) @@ plainto_tsquery('simple', $1) OR $1 = '')  
+		AND (genres @> $2 OR $2 = ARRAY[]::TEXT[] )
+		ORDER BY id
+	` // Using no stemming approach for tsquery
+
+	// creer une context avec 3-seconds timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	args := []any{
+		title,
+		pq.Array(genres),
+	}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	movies := []*Movie{}
+	for rows.Next() {
+		var movie Movie
+
+		err := rows.Scan(
+			&movie.ID,
+			&movie.CreatedAt,
+			&movie.Title,
+			&movie.Year,
+			&movie.Runtime,
+			pq.Array(&movie.Genres),
+			&movie.Version,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		movies = append(movies, &movie)
+	}
+
+	if rows.Err() != nil {
+		return nil, err
+	}
+
+	return movies, nil
+}
+
 func (m *MovieModel) Get(id int64) (*Movie, error) {
 
 	/*
