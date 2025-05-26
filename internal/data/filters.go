@@ -1,6 +1,10 @@
 package data
 
-import "github.com/VladimirArtyom/rest_eiga_api/internal/validator"
+import (
+	"strings"
+
+	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
+)
 
 type Filters struct {
 	Page              int
@@ -18,4 +22,29 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.PageSize <= 100, "page_size", "a maximum page is 100")
 
 	v.Check(validator.In(f.Sort, f.SupportedSortList...), "sort", "invalid sort value")
+}
+
+func (f Filters) sortColumn() string {
+	for _, safeValue := range f.SupportedSortList {
+		if f.Sort == safeValue {
+			return strings.TrimPrefix(safeValue, "-")
+		}
+	}
+
+	panic("unsafe sort parameter: " + f.Sort)
+}
+
+func (f Filters) sortDirection() string {
+	if strings.HasPrefix(f.Sort, "-") {
+		return "DESC"
+	}
+	return "ASC"
+}
+
+func (f Filters) limit() int {
+	return f.PageSize
+}
+
+func (f Filters) offset() int {
+	return (f.Page - 1) * f.PageSize
 }

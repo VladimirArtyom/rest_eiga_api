@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
@@ -45,20 +46,25 @@ func (m *MovieModel) Insert(movie *Movie) error {
 
 func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT id, created_at, title, year, runtime, genres, version
 		FROM movies
 		WHERE (to_tsvector(title) @@ plainto_tsquery('simple', $1) OR $1 = '')  
 		AND (genres @> $2 OR $2 = ARRAY[]::TEXT[] )
-		ORDER BY id
-	` // Using no stemming approach for tsquery
+		ORDER BY %s %s, id ASC
+		LIMIT $3 OFFSET $4
+	`, filters.sortColumn(),
+		filters.sortDirection()) // Using no stemming approach for tsquery
 
-	// creer une context avec 3-seconds timeout
+	// creer une context avec:w 3-seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
 	args := []any{
 		title,
 		pq.Array(genres),
+		filters.limit(),
+		filters.offset(),
 	}
 
 	rows, err := m.DB.QueryContext(ctx, query, args...)
