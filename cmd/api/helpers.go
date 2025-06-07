@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/VladimirArtyom/rest_eiga_api/internal/jsonlog"
 	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
@@ -95,11 +95,10 @@ func (app *application) writeJSON(w http.ResponseWriter, payload payload,
 	return nil
 }
 
-func convertStrToInt(str string, logger *log.Logger) int {
+func convertStrToInt(str string, logger *jsonlog.Logger) int {
 	result, err := strconv.Atoi(str)
 	if err != nil {
-		logger.Println(str)
-		logger.Fatal("Unable to convert str to int")
+		logger.PrintFatal(err, map[string]string{"message": "Unable to convert str to int"})
 	}
 	return result
 }

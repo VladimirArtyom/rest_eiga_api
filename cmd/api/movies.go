@@ -59,7 +59,6 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) listMovieHandler(w http.ResponseWriter, r *http.Request) {
-
 	var input struct {
 		Title  string
 		Genres []string
@@ -87,13 +86,17 @@ func (app *application) listMovieHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	movies, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filter)
+	movies, metadata, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filter)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, payload{"movies": movies}, nil, http.StatusOK)
+	err = app.writeJSON(w, payload{
+		"metadata": metadata,
+		"movies":   movies},
+		nil,
+		http.StatusOK)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

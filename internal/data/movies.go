@@ -12,13 +12,12 @@ import (
 )
 
 type Movie struct {
-	ID      int64    `json:"id"` //Unique identifier for the movei
-	Title   string   `json:"title"`
-	Year    int32    `json:"year,omitempty"`
-	Runtime Runtime  `json:"runtime,omitempty"` //in mins
-	Genres  []string `json:"genres,omitempty"`
-	Version int32    `json:"version"`
-
+	ID        int64     `json:"id"` //Unique identifier for the movei
+	Title     string    `json:"title"`
+	Year      int32     `json:"year,omitempty"`
+	Runtime   Runtime   `json:"runtime,omitempty"` //in mins
+	Genres    []string  `json:"genres,omitempty"`
+	Version   int32     `json:"version"`
 	CreatedAt time.Time `json:"-"`
 }
 
@@ -44,10 +43,10 @@ func (m *MovieModel) Insert(movie *Movie) error {
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
+func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, Metadata, error) {
 
 	query := fmt.Sprintf(`
-		SELECT id, created_at, title, year, runtime, genres, version
+		SELECT COUNT(*) OVER(), id, created_at, title, year, runtime, genres, version
 		FROM movies
 		WHERE (to_tsvector(title) @@ plainto_tsquery('simple', $1) OR $1 = '')  
 		AND (genres @> $2 OR $2 = ARRAY[]::TEXT[] )
@@ -56,7 +55,7 @@ func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*
 	`, filters.sortColumn(),
 		filters.sortDirection()) // Using no stemming approach for tsquery
 
-	// creer une context avec:w 3-seconds timeout
+	// creer une context avec 3-seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -69,14 +68,16 @@ func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*
 
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
 	movies := []*Movie{}
+	var totalRecords int = 0
 	for rows.Next() {
 		var movie Movie
 
 		err := rows.Scan(
+			&totalRecords,
 			&movie.ID,
 			&movie.CreatedAt,
 			&movie.Title,
@@ -87,17 +88,21 @@ func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		movies = append(movies, &movie)
 	}
 
+	metadata := calculateMetadata(totalRecords,
+		filters.Page,
+		filters.PageSize)
+
 	if rows.Err() != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return movies, nil
+	return movies, metadata, nil
 }
 
 func (m *MovieModel) Get(id int64) (*Movie, error) {
