@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -77,9 +78,11 @@ func main() {
 
 	var router *httprouter.Router = app.routes()
 
+	// サーバーオブジェクトからのすべてのERRORが処理されています。 (All error from server objects are handled)
 	serve := http.Server{
 		Addr:         fmt.Sprintf(":%d", app.cfg.port),
 		Handler:      router,
+		ErrorLog:     log.New(app.logger, "", 0), // 新しい実証 ( New implementation  )
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
