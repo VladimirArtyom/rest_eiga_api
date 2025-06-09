@@ -13,7 +13,6 @@ import (
 	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
 	"github.com/VladimirArtyom/rest_eiga_api/internal/jsonlog"
 	"github.com/joho/godotenv"
-	"github.com/julienschmidt/httprouter"
 	_ "github.com/lib/pq"
 )
 
@@ -76,7 +75,7 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	var router *httprouter.Router = app.routes()
+	var router http.Handler = app.routes()
 
 	// サーバーオブジェクトからのすべてのERRORが処理されています。 (All error from server objects are handled)
 	serve := http.Server{

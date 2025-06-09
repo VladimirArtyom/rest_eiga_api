@@ -23,10 +23,14 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 		w.WriteHeader(status)
 		return
 	}
-	return
 }
 
 // specific error response for each code
+
+func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
+	var message string = "rate limit exceeded"
+	app.errorResponse(w, r, http.StatusTooManyRequests, message)
+}
 
 // FailedValidationResponse message is depend on
 func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {

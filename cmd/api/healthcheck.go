@@ -4,19 +4,19 @@ import (
 	"net/http"
 )
 
-func (app *application) healthcheckHandler(w http.ResponseWriter,r *http.Request){
+func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
 
-	data := map[string]interface{} {
+	data := map[string]interface{}{
 		"status": "available",
 		"system_info": map[string]string{
 			"environment": app.cfg.env,
-			"version": version,
+			"version":     version,
 		},
 	}
 
 	err := app.writeJSON(w, payload{"data": data}, nil, http.StatusOK) // Tu peux changer l'en-tete plus tard
-	app.serverErrorResponse(w, r, err)
-	
-	return
-}
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 
+}
