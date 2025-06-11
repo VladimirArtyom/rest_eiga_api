@@ -105,7 +105,11 @@ run_concurrency:
 run:
 	go run $(PATH_FILE)
 
-
 ## Requesting at the same times to test simultaneously req
 same-occurance:
 	curl localhost:8080/v1/movies/1 & curl localhost:8080/v1/movies/1 &
+
+## needs to run independently,  このコードはcannot run using the make approach.
+shot-api-simultaneously:
+	for i in {1..6}; do curl http://localhost:8080/v1/healthcheck;done
+
