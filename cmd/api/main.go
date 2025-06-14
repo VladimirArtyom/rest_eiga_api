@@ -4,9 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -29,8 +26,8 @@ type config struct {
 	}
 
 	limiter struct {
-		rps float64
-		burst int
+		rps     float64
+		burst   int
 		enabled bool
 	}
 }
@@ -86,25 +83,11 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	var router http.Handler = app.routes()
-
 	// サーバーオブジェクトからのすべてのERRORが処理されています。 (All error from server objects are handled)
-	serve := http.Server{
-		Addr:         fmt.Sprintf(":%d", app.cfg.port),
-		Handler:      router,
-		ErrorLog:     log.New(app.logger, "", 0), // 新しい実証 ( New implementation  )
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
+	err = app.serve()
+	if err != nil {
+		logger.PrintFatal(err, map[string]string{"message": "Unable to start the server."})
 	}
-
-	// 正しい形式に変更しますた。 (I changed it to the correct format)
-	logger.PrintInfo("Starting server", map[string]string{
-		"addr": serve.Addr,
-		"env":  app.cfg.env,
-	})
-	err = serve.ListenAndServe()
-	logger.PrintFatal(err, map[string]string{"message": "Unable to start the server."})
 }
 
 func openDB(cfg config) (*sql.DB, error) {

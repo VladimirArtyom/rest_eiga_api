@@ -40,7 +40,7 @@ func (app *application) rateLimitGlobal(next http.Handler) http.Handler {
 
 func (app *application) rateLimit(next http.Handler) http.Handler {
 	type client struct {
-		limiter *rate.Limiter
+		limiter  *rate.Limiter
 		lastSeen time.Time
 	}
 
@@ -51,23 +51,22 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		if app.cfg.limiter.enabled{
+		if app.cfg.limiter.enabled {
 
-			ip, _, err := net.SplitHostPort(r.RemoteAddr) 
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
 			}
 
-
-			go func(){
+			go func() {
 
 				time.Sleep(1 * time.Minute)
 
 				for {
 					mutex.Lock()
 					for ip, client := range clients {
-						if time.Since(client.lastSeen) > 3 * time.Minute {
+						if time.Since(client.lastSeen) > 3*time.Minute {
 							delete(clients, ip)
 						}
 					}
@@ -78,7 +77,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 			mutex.Lock()
 
-			_, found := clients[ip] 
+			_, found := clients[ip]
 			if !found {
 				clients[ip] = &client{
 					limiter: rate.NewLimiter(rate.Limit(app.cfg.limiter.rps),
@@ -99,4 +98,3 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-

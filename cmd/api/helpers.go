@@ -90,8 +90,8 @@ func (app *application) writeJSON(w http.ResponseWriter, payload payload,
 
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Write(jsonData)
 	w.WriteHeader(statusCode)
+	w.Write(jsonData)
 	return nil
 }
 
