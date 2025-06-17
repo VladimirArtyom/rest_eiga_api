@@ -62,7 +62,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	// メールを送信する
 
-	go func(user data.User) {
+	func(user data.User) {
 
 		defer func() {
 			if err := recover(); err != nil {
