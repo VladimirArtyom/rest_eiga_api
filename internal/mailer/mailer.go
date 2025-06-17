@@ -7,10 +7,9 @@ import (
 	"time"
 
 	"github.com/go-mail/mail/v2"
-	"golang.org/x/text/width"
 )
 
-// go:embed templates
+//go:embed "templates"
 var templateFS embed.FS
 
 // 新しい構造を定義する
@@ -19,15 +18,14 @@ type Mailer struct {
 	sender string
 }
 
-
-func New(host string, port int, username, password, sender string) Mailer {
+func New(host string, port int, username, password, sender string) *Mailer {
 
 	var dialer *mail.Dialer = mail.NewDialer(host, port, username, password)
 	
 	dialer.Timeout = 5 * time.Second
 	dialer.RetryFailure = true
 
-	return Mailer{
+	return &Mailer{
 		dialer: dialer,
 		sender: sender,
 	}
@@ -56,23 +54,28 @@ func (m *Mailer) Send(recipient string, templateFileName string, templateData in
 	}
 
 	var htmlBodyBuf *bytes.Buffer = new(bytes.Buffer) 
-	err = tmpl.ExecuteTemplate(htmlBodyBuf, "htmlbody", templateData)
+	err = tmpl.ExecuteTemplate(htmlBodyBuf, "htmlBody", templateData)
 	if err != nil {
 		return err
 	}
 
 	message := mail.NewMessage()
-	message.SetHeader("Content-Type", "text/html; charset=UTF-8")
 	message.SetHeader("From", m.sender)
 	message.SetHeader("To", recipient)
 	message.SetHeader("Subject", subjectBuf.String())
 	message.SetBody("text/plain", bodyBuf.String())
 	message.AddAlternative("text/html", htmlBodyBuf.String())
 
-	err = m.dialer.DialAndSend(message)
-	if err != nil {
-		return err
+	for i := 0 ; i<3 ; i++ {
+		
+		err = m.dialer.DialAndSend(message)
+		if err == nil {
+			return nil
+		}
+	
+		time.Sleep(1000 * time.Millisecond)
 	}
-	return nil
+
+	return err
 
 }

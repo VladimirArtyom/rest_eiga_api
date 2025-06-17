@@ -136,3 +136,20 @@ func (app *application) readString(parameters url.Values, key string, defaultVal
 	// Add the necessary validations
 	return value
 }
+
+//Backroundの関数
+func (app *application) background(fn func(any interface{})) {
+
+	go func() {
+
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+
+		//ランダムの関数を実行する
+		fn(nil)
+	}()
+}
+

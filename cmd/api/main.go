@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"flag"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
 	"github.com/VladimirArtyom/rest_eiga_api/internal/jsonlog"
+	"github.com/VladimirArtyom/rest_eiga_api/internal/mailer"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -43,11 +43,11 @@ type application struct {
 	cfg    config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer *mailer.Mailer
 }
 
 func main() {
 	var cfg config
-
 	//　古いlogger
 	// logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	// 新しいLogger
@@ -74,14 +74,13 @@ func main() {
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
 	// SMTPの変数
+	smtp_port := convertStrToInt(os.Getenv("SMTP_PORT"), logger)
 	flag.StringVar(&cfg.smtp.host, "smtp-host", os.Getenv("SMTP_HOST"), "The host of the mail server")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", convertStrToInt(os.Getenv("SMPT_PORT"), logger), "The port of the mail server")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", smtp_port, "The port of the mail server")
 	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USERNAME") , "The username of the mail server")
 	flag.StringVar(&cfg.smtp.password, "smpt-password", os.Getenv("SMTP_PASSWORD"), "The password of the mail server")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SMTP_SENDER"), "The sender of the mail")
 	
-
-
 	flag.Parse()
 
 	// Init database
@@ -97,6 +96,11 @@ func main() {
 		cfg:    cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host,
+						cfg.smtp.port,
+						cfg.smtp.username,
+						cfg.smtp.password,
+						cfg.smtp.sender),
 	}
 
 	// サーバーオブジェクトからのすべてのERRORが処理されています。 (All error from server objects are handled)
