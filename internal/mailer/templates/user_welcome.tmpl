@@ -1,0 +1,31 @@
+{{define "subject"}}Welcome to Greenmemes!{{end}}
+
+{{define "plainbody"}},
+
+Welcome to Greenmemes!
+
+Thanks for signing up for an account. We're exicted to have you on board!
+
+For future memes, your user id number is {{.ID}}.
+
+Sincerly,
+
+The Greenmemes Team
+{{end}}
+
+{{define "htmlBody"}}
+	<!doctype html>
+	<html>
+		<head>
+			<meta charset="utf-8">
+			<title>Welcome to Greenmemes!</title>
+		</head>
+		<body>
+			<h1>Welcome to Greenmemes!</h1>
+			<p>Thanks for signing up for an account. We're exicted to have you on board!</p>
+			<p>For future memes, your user id number is {{.ID}}.</p>
+			<p>Sincerly,<br>The Greenmemes Team</p>
+		</body>
+	</html>
+{{end}}
+

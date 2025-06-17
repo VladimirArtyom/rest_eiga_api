@@ -12,6 +12,14 @@ func (app *application) routes() http.Handler {
 	router.NotFound = http.HandlerFunc(app.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
+	router = app.movieRoutes(router)
+	router = app.userRoutes(router)
+
+	return app.recoverPanic(app.rateLimit(router))
+}
+
+func (app *application) movieRoutes(router *httprouter.Router) *httprouter.Router {
+
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/movies", app.createMovieHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/movies", app.listMovieHandler)
@@ -19,5 +27,13 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.updateMovieHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.deleteMovieHandler)
 
-	return app.recoverPanic(app.rateLimit(router))
+	return router
+}
+
+func (app *application) userRoutes(router *httprouter.Router) *httprouter.Router {
+	
+	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+
+	return router
+	
 }

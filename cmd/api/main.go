@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
@@ -24,11 +25,17 @@ type config struct {
 		maxIdleConnections int
 		maxIdleTimeout     int
 	}
-
 	limiter struct {
 		rps     float64
 		burst   int
 		enabled bool
+	}
+	smtp struct {
+		host string
+		port int
+		username string
+		password string
+		sender string
 	}
 }
 
@@ -65,6 +72,15 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+
+	// SMTPの変数
+	flag.StringVar(&cfg.smtp.host, "smtp-host", os.Getenv("SMTP_HOST"), "The host of the mail server")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", convertStrToInt(os.Getenv("SMPT_PORT"), logger), "The port of the mail server")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USERNAME") , "The username of the mail server")
+	flag.StringVar(&cfg.smtp.password, "smpt-password", os.Getenv("SMTP_PASSWORD"), "The password of the mail server")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SMTP_SENDER"), "The sender of the mail")
+	
+
 
 	flag.Parse()
 

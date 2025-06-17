@@ -46,18 +46,17 @@ func (u *UserModel) Insert(user *User) error {
 	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
 		pqErr, ok := err.(*pq.Error); if ok {
-			switch {
+		switch {
 			case pqErr.Code.Name() == "unique_violation" && pqErr.Constraint == "users_email_key":
 				return ErrDuplicateEmail
 			}
 		}
 		return err
 	}
-
 	return nil
 }
 
-func (u *UserModel)_GetByEmail(email string) (*User, error ) {
+func (u *UserModel)GetByEmail(email string) (*User, error ) {
 	
 	query := `
 		SELECT id, created_at, name, email, password_hash, activated, version
@@ -88,7 +87,7 @@ func (u *UserModel)_GetByEmail(email string) (*User, error ) {
 }
 
 
-func (u *UserModel) Update(user *User) error {
+func (u *UserModel)Update(user *User) error {
 
 	query := `
 		UPDATE users
