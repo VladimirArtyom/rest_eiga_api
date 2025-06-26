@@ -38,7 +38,17 @@ func (app *application) serve() error {
 			"Signal": s.String(),
 		})
 
-		shutdownErrorChannel <- server.Shutdown(ctx)
+		err := server.Shutdown(ctx)
+		if err != nil {
+			shutdownErrorChannel <- err
+		}
+
+		app.logger.PrintInfo("Completing background tasks...", map[string]string{
+			"addr": server.Addr,
+		})	
+
+		app.wg.Wait()
+		shutdownErrorChannel <- nil
 	}()
 
 	app.logger.PrintInfo("starting server", map[string]string{

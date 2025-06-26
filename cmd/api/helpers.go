@@ -138,9 +138,13 @@ func (app *application) readString(parameters url.Values, key string, defaultVal
 }
 
 //Backroundの関数
-func (app *application) background(fn func(any interface{})) {
+func (app *application) background(fn func(params interface{}), arg interface{}) {
+
+	//いつも関数呼出前. よびだし
+	app.wg.Add(1)
 
 	go func() {
+		defer app.wg.Done()
 
 		defer func() {
 			if err := recover(); err != nil {
@@ -149,7 +153,7 @@ func (app *application) background(fn func(any interface{})) {
 		}()
 
 		//ランダムの関数を実行する
-		fn(nil)
+		fn(arg)
 	}()
 }
 
