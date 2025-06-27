@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"time"
@@ -29,12 +30,12 @@ var ErrDuplicateEmail = errors.New("duplicate email")
 func (u *UserModel) Insert(user *User) error {
 
 	query := `
-		INSERT INTO users (name, email, password_hash, activated)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at, version
+	INSERT INTO users (name, email, password_hash, activated)
+	VALUES ($1, $2, $3, $4)
+	RETURNING id, created_at, version
 	`
 	args := []interface{}{
-	  user.Name,
+		user.Name,
 		user.Email,
 		user.Password.hash,
 		user.Activated,
@@ -46,7 +47,7 @@ func (u *UserModel) Insert(user *User) error {
 	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
 		pqErr, ok := err.(*pq.Error); if ok {
-		switch {
+			switch {
 			case pqErr.Code.Name() == "unique_violation" && pqErr.Constraint == "users_email_key":
 				return ErrDuplicateEmail
 			}
@@ -56,12 +57,54 @@ func (u *UserModel) Insert(user *User) error {
 	return nil
 }
 
+func (u *UserModel)GetForToken(tokenScope string, tokenPlaintext string) (*User, error) {
+	hash := sha256.Sum256([]byte(tokenPlaintext))
+	var user User
+	var query string = `
+		SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.version
+		FROM users as u 
+		INNER JOIN tokens as t 
+		ON u.id = t.user_id
+		WHERE t.hash=$1 
+		AND t.scope=$2
+		AND t.expiry>$3
+		`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	args := []interface{}{
+		hash[:],
+		tokenScope,
+		time.Now(),
+	}
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Name,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+
+	if err != nil {
+		switch {
+			case errors.Is(err, sql.ErrNoRows):
+				return nil, ErrRecordNotFound
+			default:
+				return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
 func (u *UserModel)GetByEmail(email string) (*User, error ) {
-	
+
 	query := `
-		SELECT id, created_at, name, email, password_hash, activated, version
-		FROM users
-		WHERE email = $1
+	SELECT id, created_at, name, email, password_hash, activated, version
+	FROM users
+	WHERE email = $1
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -90,10 +133,10 @@ func (u *UserModel)GetByEmail(email string) (*User, error ) {
 func (u *UserModel)Update(user *User) error {
 
 	query := `
-		UPDATE users
-		SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
-		WHERE id = $5 AND version = $6 
-		RETURNING version
+	UPDATE users
+	SET name = $1, email = $2, password_hash = $3, activated = $4, version = version + 1
+	WHERE id = $5 AND version = $6 
+	RETURNING version
 	`
 
 	args := []interface{}{
@@ -112,10 +155,10 @@ func (u *UserModel)Update(user *User) error {
 	if err != nil {
 		pqErr, ok := err.(*pq.Error); if ok {
 			switch {
-				case pqErr.Code.Name() == "unique_violation" && pqErr.Constraint == "users_email_key":
-					return ErrDuplicateEmail
-				case errors.Is(err, sql.ErrNoRows):
-					return ErrEditConflict
+			case pqErr.Code.Name() == "unique_violation" && pqErr.Constraint == "users_email_key":
+				return ErrDuplicateEmail
+			case errors.Is(err, sql.ErrNoRows):
+				return ErrEditConflict
 			}
 		}
 
@@ -138,11 +181,11 @@ func ValidatePasswordPlainText(v *validator.Validator, password string) {
 	v.Check(password != "", "password", "must be provided")
 	v.Check(len(password) >= 8, "password", "must be at least 8 bytes long")
 	v.Check(len(password) <= 72, "password", "must be at most 72 bytes long")
-	
+
 }
 
 func ValidateUser(v *validator.Validator, user *User) {
-	
+
 	//ユーザの名前
 	v.Check(user.Name != "", "name", "must be provided")
 	v.Check(len(user.Name) <=500, "name", "must be lower than 500 bytes")
@@ -157,4 +200,4 @@ func ValidateUser(v *validator.Validator, user *User) {
 		panic("Missing hashed password")
 	}
 
-} 
+}

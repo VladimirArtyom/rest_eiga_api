@@ -8,6 +8,14 @@ Thanks for signing up for an account. We're exicted to have you on board!
 
 For future memes, your user id number is {{.ID}}.
 
+Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON body
+to activate your account:
+
+{"token": "{{.ActivationToken}}"}
+
+Btw this is on plainTextBody
+Please note that this token is one-time only and it will expire in 3 days.
+
 Sincerly,
 The Greenmemes Team
 {{end}}
@@ -24,6 +32,14 @@ The Greenmemes Team
 			<p>Welcome to Greenmemes!<p>
 			<p>Thanks for signing up for an account. We're exicted to have you on board!</p>
 			<p>For future memes, your user id number is {{.ID}}.</p>
+			<p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the following JSON body
+			to activate your account:</p>
+			<pre>
+				<code> 
+					{"token" :"{{.ActivationToken}}"}
+				</code>
+			</pre>
+			<p> Please note that this token is one-time use only and it will expire in 3 days</p>
 			<p>Sincerly,<br>The Greenmemes Team</p>
 		</body>
 	</html>

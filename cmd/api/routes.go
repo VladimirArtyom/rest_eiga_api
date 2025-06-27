@@ -33,6 +33,7 @@ func (app *application) movieRoutes(router *httprouter.Router) *httprouter.Route
 func (app *application) userRoutes(router *httprouter.Router) *httprouter.Router {
 	
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 
 	return router
 	

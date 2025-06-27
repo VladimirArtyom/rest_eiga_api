@@ -55,7 +55,6 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-
 }
 
 func (app *application) listMovieHandler(w http.ResponseWriter, r *http.Request) {

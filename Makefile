@@ -1,5 +1,4 @@
-PATH_FILE = ./cmd/api/
-
+PATH_FILE = ./cmd/api
 POSTGRES_PASSWORD = 123456
 POSTGRES_USER = postgres
 DOCKER_CONTAINER_NAME = postgres-db
@@ -79,7 +78,7 @@ migrate-force-cnum:
 		--network eiga-go-network \
 		-v $(CURDIR)/migrations:/migrations \
 		migrate/migrate:v4.14.1 \
-		-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" force 3 # force your_num; Please change le numero 
+		-path=/migrations -database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DOCKER_CONTAINER_NAME):$(DB_PORT)/$(DB_NAME)?sslmode=disable" force 4 # force your_num; Please change le numero 
 
 migrate-create-movies-table_1:
 	docker run --rm \
@@ -108,6 +107,12 @@ migrate-create-users-table_4:
 		-v $(CURDIR)/migrations:/migrations \
 		migrate/migrate:v4.14.1 create -seq -ext=.sql -dir=/migrations create_users_table
 
+migrate-create-tokens-table_5:
+	docker run --rm \
+		--network eiga-go-network \
+		-v $(CURDIR)/migrations:/migrations \
+		migrate/migrate:v4.14.1 create -seq -ext=.sql -dir=/migrations create_tokens_table
+
 init-db: create-network create-postgres 
 delete-db: stop-postgres remove-postgres delete-network
 populate-db: init-postgres 
@@ -126,3 +131,4 @@ same-occurance:
 shot-api-simultaneously:
 	for i in {1..6}; do curl http://localhost:8080/v1/healthcheck;done
 
+##
