@@ -14,6 +14,7 @@ func (app *application) routes() http.Handler {
 
 	router = app.movieRoutes(router)
 	router = app.userRoutes(router)
+	router = app.userTokens(router)
 
 	return app.recoverPanic(app.rateLimit(router))
 }
@@ -37,4 +38,9 @@ func (app *application) userRoutes(router *httprouter.Router) *httprouter.Router
 
 	return router
 	
+}
+
+func (app *application) userTokens(router *httprouter.Router) *httprouter.Router {
+	router.HandlerFunc(http.MethodPost,"/v1/tokens/authentication", app.createAuthenticationTokenHandler)
+	return router
 }

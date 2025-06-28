@@ -63,8 +63,15 @@ func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.
 }
 
 func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request) {
-
 	message := "The resource cannot be found"
 	app.errorResponse(w, r, http.StatusNotFound, message)
 	return
 }
+
+func (app *application) invalidCredentialResponse(w http.ResponseWriter, r *http.Request) {
+	message := "Invalid authentication credential"
+	app.errorResponse(w, r, http.StatusUnauthorized, message )
+	return
+}
+
+
