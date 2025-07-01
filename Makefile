@@ -138,4 +138,12 @@ try_bearer:
 	curl -i -H "Authorization: Bearer BWEP6MYF5ZPZNBBKCYPNUTY5KQ" localhost:8080/v1/healthcheck
 try_invalid_bearer:
 	curl -i -H "Authorization: Bearer MEMES" localhost:8080/v1/healthcheck
-## Authorization Test を　終わる
+
+get_authorization_movie:
+	curl -i -d '{"email": "jamet@memes.com", "password":"password"}' localhost:8080/v1/tokens/authentication # This user isn't activated yet
+
+try_authorization_movie_invalid:
+	curl -i -H "Authorization:Bearer 7567MHC5NETLDOHWV6OJNVONSQ" localhost:8080/v1/movies/2
+try_authorization_movie:
+	curl -i -H "Authorization:Bearer BWEP6MYF5ZPZNBBKCYPNUTY5KQ" localhost:8080/v1/movies/4
+## Authorization Testを終わる

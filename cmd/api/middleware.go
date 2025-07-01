@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
-
+	"time" 
 	"github.com/VladimirArtyom/rest_eiga_api/internal/data"
 	"github.com/VladimirArtyom/rest_eiga_api/internal/validator"
 	"golang.org/x/time/rate"
@@ -106,9 +105,9 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r* http.Request) {
-		
+
 		w.Header().Add("Vary", "Authorization")
-		
+
 		var authorizationHeader string = r.Header.Get("Authorization")
 
 		if authorizationHeader == "" {
@@ -116,7 +115,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-	
+
 
 		var headerParts []string = strings.Split(authorizationHeader, " ")
 		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
@@ -125,27 +124,53 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		var token string = headerParts[1]
-		
+
 		var v *validator.Validator = validator.New()
-		
+
 		data.ValidateToken(v, token)
 
 		if !v.Valid() {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
-	
+
 		user, err := app.models.Users.GetForToken(data.ScopeAuthentication, token)
 		if err != nil {
 			switch {
-				case errors.Is(err, data.ErrRecordNotFound):
-					app.invalidAuthenticationTokenResponse(w, r)
-				default:
-					app.serverErrorResponse(w, r, err)
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.invalidAuthenticationTokenResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
 			}
 			return 
 		}
 		r = app.contextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (app* application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return  http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+		if user.IsAnonymous(){
+			app.authenticationRequiredResponse(w, r)
+			return
+		}
+		next.ServeHTTP(w,r)
+	})
+}
+
+func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request ) {
+		user := app.contextGetUser(r)
+		if !user.Activated {
+			app.inactiveAccountResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+	
+	return app.requireActivatedUser(fn)
 }
