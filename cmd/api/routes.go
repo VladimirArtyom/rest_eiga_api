@@ -16,7 +16,7 @@ func (app *application) routes() http.Handler {
 	router = app.userRoutes(router)
 	router = app.userTokens(router)
 
-	return app.recoverPanic(app.rateLimit(router))
+	return app.recoverPanic(app.rateLimit(app.authenticate(router)))
 }
 
 func (app *application) movieRoutes(router *httprouter.Router) *httprouter.Router {

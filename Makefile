@@ -131,4 +131,11 @@ same-occurance:
 shot-api-simultaneously:
 	for i in {1..6}; do curl http://localhost:8080/v1/healthcheck;done
 
-##
+## Authorization test　を 始める
+get_bearer:
+	curl -d '{"email": "konas@memes.com", "password":"password"}' localhost:8080/v1/tokens/authentication 
+try_bearer:
+	curl -i -H "Authorization: Bearer BWEP6MYF5ZPZNBBKCYPNUTY5KQ" localhost:8080/v1/healthcheck
+try_invalid_bearer:
+	curl -i -H "Authorization: Bearer MEMES" localhost:8080/v1/healthcheck
+## Authorization Test を　終わる

@@ -131,7 +131,6 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 
 	user.Activated = true
 	
-
 	// Mise a jour un nouveau utilisateur
 	err = app.models.Users.Update(user)
 	if err != nil {

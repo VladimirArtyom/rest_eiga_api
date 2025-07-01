@@ -11,6 +11,8 @@ import (
 	"github.com/lib/pq"
 )
 
+var AnonymousUser = &User{}
+
 type User struct {
 	ID int64 `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -26,6 +28,10 @@ type UserModel struct {
 }
 
 var ErrDuplicateEmail = errors.New("duplicate email")
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
+}
 
 func (u *UserModel) Insert(user *User) error {
 
