@@ -113,6 +113,13 @@ migrate-create-tokens-table_5:
 		-v $(CURDIR)/migrations:/migrations \
 		migrate/migrate:v4.14.1 create -seq -ext=.sql -dir=/migrations create_tokens_table
 
+migrate-add-permissions_6:
+	docker run --rm \
+		--network eiga-go-network \
+		-v $(CURDIR)/migrations:/migrations \
+		migrate/migrate:v4.14.1 create -seq -ext=.sql -dir=/migrations add_permissions
+
+
 init-db: create-network create-postgres 
 delete-db: stop-postgres remove-postgres delete-network
 populate-db: init-postgres 
