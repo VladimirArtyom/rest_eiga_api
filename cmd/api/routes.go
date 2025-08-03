@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,17 +17,18 @@ func (app *application) routes() http.Handler {
 	router = app.userRoutes(router)
 	router = app.userTokens(router)
 
-	return app.recoverPanic(app.rateLimit(app.authenticate(router)))
+	router = app.metricRoutes(router)
+	return app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router))))
 }
 
 func (app *application) movieRoutes(router *httprouter.Router) *httprouter.Router {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/movies", app.requireActivatedUser(app.createMovieHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/movies", app.requireActivatedUser(app.listMovieHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", app.requireActivatedUser(app.showMovieHandler))
-	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.requireActivatedUser(app.updateMovieHandler))
-	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.requireActivatedUser(app.deleteMovieHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/movies", app.requirePermission("movies:write", app.createMovieHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/movies", app.requirePermission("movies:read", app.listMovieHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", app.requirePermission("movies:read", app.showMovieHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.requirePermission("movies:write", app.updateMovieHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.requirePermission("movies:write", app.deleteMovieHandler))
 
 	return router
 }
@@ -37,10 +39,15 @@ func (app *application) userRoutes(router *httprouter.Router) *httprouter.Router
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 
 	return router
-	
 }
 
 func (app *application) userTokens(router *httprouter.Router) *httprouter.Router {
 	router.HandlerFunc(http.MethodPost,"/v1/tokens/authentication", app.createAuthenticationTokenHandler)
+	return router
+}
+
+func (app *application) metricRoutes(router *httprouter.Router) *httprouter.Router {
+		
+	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
 	return router
 }

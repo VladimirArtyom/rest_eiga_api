@@ -148,11 +148,40 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+ 
+func (app *application) enableCORS(next http.Handler) http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Vary is to give additional cache key information
+		// It is to distinguish every response that was made to the server.
+		w.Header().Add("Vary", "Origin")
+		
+		w.Header().Add("Vary", "Access-Control-Request-Method")
+
+		origin := r.Header.Get("origin")
+		if (app.cfg.cors.origins[origin]) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			
+			// Si la request est Preflight
+			if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+				w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE" )
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+				
+				w.Header().Set("Access-Control-Max-Age", "300")
+				w.WriteHeader(http.StatusOK)
+				return 
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+} 
 
 func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
+		fmt.Println(user.ID)
 		permissions, err := app.models.Permissions.GetAllForUser(user.ID)
+		fmt.Println(permissions)
 		if err != nil {
 			app.notPermittedResponse(w,r)
 			return
@@ -192,3 +221,4 @@ func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.Han
 	})
 	
 }
+

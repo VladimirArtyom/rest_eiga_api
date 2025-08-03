@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +21,9 @@ const version string = "1.0.0"
 type config struct {
 	port int
 	env  string
+	cors struct {
+		origins map[string]bool 
+	}
 	db   struct {
 		dsn                string
 		maxOpenConnections int
@@ -59,6 +63,11 @@ func main() {
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
+
+	// Flag set 始める
+	var corsFlagSet bool = false
+	// Flag Set 終わり
+
 	port := convertStrToInt(os.Getenv("PORT"), logger)
 	db_max_open_conns := convertStrToInt(os.Getenv("DATABASE_MAX_OPEN_CONNECTIONS"), logger)
 	db_max_idle_conns := convertStrToInt(os.Getenv("DATABASE_MAX_IDLE_CONNECTIONS"), logger)
@@ -82,7 +91,20 @@ func main() {
 	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USERNAME") , "The username of the mail server")
 	flag.StringVar(&cfg.smtp.password, "smpt-password", os.Getenv("SMTP_PASSWORD"), "The password of the mail server")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SMTP_SENDER"), "The sender of the mail")
+
+	// Allowed origins
+	flag.Func("cors-trusted-origin", "Trusted origins, separated by COMMA", func(origins string) error {
+		
+		for _, origin := range strings.Split(origins, ",") {
+			cfg.cors.origins[origin] = true
+		}
+		corsFlagSet = true
+		return nil
+	},)
 	
+	if !corsFlagSet {
+		cfg.cors.origins = parseAllowedOrigins(os.Getenv("ALLOWED_ORIGINS"))
+	}
 	flag.Parse()
 
 	// Init database
@@ -104,6 +126,7 @@ func main() {
 						cfg.smtp.password,
 						cfg.smtp.sender),
 	}
+
 
 	// サーバーオブジェクトからのすべてのERRORが処理されています。 (All error from server objects are handled)
 	err = app.serve()

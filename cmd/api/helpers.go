@@ -26,6 +26,14 @@ func (app *application) readIDParameter(r *http.Request) (int64, error) {
 	return id, nil
 }
 
+func parseAllowedOrigins(origins string) map[string]bool {
+	trustedOrigins := map[string]bool{}
+	for _, origin := range strings.Split(origins, ",") {
+		trustedOrigins[origin] = true
+	}
+	return trustedOrigins
+}
+
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, destination interface{}) error {
 	// We also need to limit the size of the request body
 	var req_body_size int64 = 1_048_576

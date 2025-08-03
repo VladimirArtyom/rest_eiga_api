@@ -54,7 +54,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	// データをデータベースに保存する
 	err = app.models.Users.Insert(user)
-
+	
 	if err != nil {
 		switch {
 			case errors.Is(err, data.ErrDuplicateEmail):
@@ -64,6 +64,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 				app.serverErrorResponse(w, r, err)
 		}
 			return
+	}
+
+	err = app.models.Permissions.AddForUser(user.ID, "movies:read")
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return 
 	}
 	
 	token , err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)

@@ -154,3 +154,13 @@ try_authorization_movie_invalid:
 try_authorization_movie:
 	curl -i -H "Authorization:Bearer BWEP6MYF5ZPZNBBKCYPNUTY5KQ" localhost:8080/v1/movies/4
 ## Authorization Testを終わる
+
+
+## Cors run 
+cors:
+	go run ./cmd/examples/cors/simple/
+
+## Preflight cors run
+preflight_cors:
+	go run ./cmd/examples/cors/preflight/
+
